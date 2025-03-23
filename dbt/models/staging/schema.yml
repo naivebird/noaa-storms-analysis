@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: staging
+    database: de-zoomcamp-448805
+    schema: noaa_dataset
+
+    tables:
+      - name: noaa_storms_partitioned
+      - name: noaa_fatalities_partitioned
+      
+  
