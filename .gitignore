@@ -1,0 +1,6 @@
+.venv
+.google
+logs
+.idea
+.terraform
+*.tfstate

@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "noaa-storms-analysis"
+version = "0.1.0"
+description = ""
+authors = ["Duc Ho <hoduc1202@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "~3.10"
+apache-airflow = "2.10.4"
+apache-airflow-providers-google = "^14.0.0"
+pyspark = "^3.5.5"
+beautifulsoup4 = "^4.13.3"
+apache-airflow-providers-apache-spark = "^5.0.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
