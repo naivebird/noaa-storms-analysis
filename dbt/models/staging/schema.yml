@@ -8,5 +8,3 @@ sources:
     tables:
       - name: noaa_storms_partitioned
       - name: noaa_fatalities_partitioned
-      
-  
