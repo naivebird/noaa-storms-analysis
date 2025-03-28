@@ -16,7 +16,7 @@ def get_noaa_url(year, file_type):
         cells = row.find_all("td")
         if cells and cells[0].text.startswith(f"StormEvents_{file_type}-ftp_v1.0_d{year}"):
             return f"{NOAA_URL}{cells[0].find('a')['href']}"
-    raise Exception("Failed to find the URL for the given year.")
+    raise Exception(f"Failed to find the URL for the given year: {year}")
 
 
 def download_noaa_data(year, file_type, output_path):

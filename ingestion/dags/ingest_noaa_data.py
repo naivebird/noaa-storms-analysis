@@ -1,48 +1,39 @@
 import os
 import shutil
 from datetime import datetime
-import glob
 
 from airflow import DAG
-from airflow.models import Variable
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
 
 from scripts.download_noaa_data import download_noaa_data
 
-year = Variable.get("year", 2024)
-
 gcs_bucket = os.getenv("GCS_BUCKET")
 
-RAW_STORMS_FILE = f"/tmp/noaa_storms_{year}.csv.gz"
-PROCESSED_STORMS_FILE = f"/tmp/noaa_storms_{year}.parquet"
 
-RAW_FATALITIES_FILE = f"/tmp/noaa_fatalities_{year}.csv.gz"
-PROCESSED_FATALITIES_FILE = f"/tmp/noaa_fatalities_{year}.parquet"
-
-BUCKET_STORMS_PATH = f"noaa_storms_{year}.parquet"
-BUCKET_FATALITIES_PATH = f"noaa_fatalities_{year}.parquet"
+def download_data(execution_date, **context):
+    year = execution_date.year
+    download_noaa_data(year, "details", f"/tmp/noaa_storms_{year}.csv.gz")
+    download_noaa_data(year, "fatalities", f"/tmp/noaa_fatalities_{year}.csv.gz")
 
 
-def download_data():
-    download_noaa_data(year, "details", RAW_STORMS_FILE)
-    download_noaa_data(year, "fatalities", RAW_FATALITIES_FILE)
+def clean_up(execution_date, **context):
+    year = execution_date.year
+    os.remove(f"/tmp/noaa_storms_{year}.csv.gz")
+    os.remove(f"/tmp/noaa_fatalities_{year}.csv.gz")
+    shutil.rmtree(f"/tmp/noaa_storms_{year}.parquet")
+    shutil.rmtree(f"/tmp/noaa_fatalities_{year}.parquet")
 
 
-def clean_up():
-    os.remove(RAW_STORMS_FILE)
-    os.remove(RAW_FATALITIES_FILE)
-    shutil.rmtree(PROCESSED_STORMS_FILE)
-    shutil.rmtree(PROCESSED_FATALITIES_FILE)
-
-
-default_args = {"owner": "ingestion", "start_date": datetime(2024, 3, 21)}
+default_args = {"owner": "ingestion", "start_date": datetime(1951, 1, 1)}
 
 with DAG("ingest_noaa_data", default_args=default_args, schedule="@yearly", catchup=False) as dag:
     download_data_task = PythonOperator(
         task_id="download_noaa_data",
         python_callable=download_data,
+        provide_context=True
     )
 
     process_storms_data_task = SparkSubmitOperator(
@@ -50,7 +41,10 @@ with DAG("ingest_noaa_data", default_args=default_args, schedule="@yearly", catc
         application="/opt/airflow/dags/scripts/process_noaa_data.py",
         conn_id="spark_default",
         conf={"spark.master": "local[*]"},
-        application_args=[RAW_STORMS_FILE, PROCESSED_STORMS_FILE],
+        application_args=[
+            "/tmp/noaa_storms_{{ execution_date.year }}.csv.gz",
+            "/tmp/noaa_storms_{{ execution_date.year }}.parquet"
+        ],
         dag=dag
     )
 
@@ -59,7 +53,10 @@ with DAG("ingest_noaa_data", default_args=default_args, schedule="@yearly", catc
         application="/opt/airflow/dags/scripts/process_noaa_data.py",
         conn_id="spark_default",
         conf={"spark.master": "local[*]"},
-        application_args=[RAW_FATALITIES_FILE, PROCESSED_FATALITIES_FILE],
+        application_args=[
+            "/tmp/noaa_fatalities_{{ execution_date.year }}.csv.gz",
+            "/tmp/noaa_fatalities_{{ execution_date.year }}.parquet"
+        ],
         dag=dag
     )
 
@@ -67,8 +64,8 @@ with DAG("ingest_noaa_data", default_args=default_args, schedule="@yearly", catc
         task_id="upload_storms_to_gcs",
         gcp_conn_id="google_cloud_default",
         bucket=gcs_bucket,
-        src=glob.glob(PROCESSED_STORMS_FILE + "/*.parquet"),
-        dst=f"noaa_storms_{year}/",
+        src="/tmp/noaa_storms_{{ execution_date.year }}.parquet/*.parquet",
+        dst="noaa_storms_{{ execution_date.year }}/",
         mime_type="application/octet-stream",
     )
 
@@ -76,17 +73,24 @@ with DAG("ingest_noaa_data", default_args=default_args, schedule="@yearly", catc
         task_id="upload_fatalities_to_gcs",
         gcp_conn_id="google_cloud_default",
         bucket=gcs_bucket,
-        src=glob.glob(PROCESSED_FATALITIES_FILE + "/*.parquet"),
-        dst=f"noaa_fatalities_{year}/",
+        src="/tmp/noaa_fatalities_{{ execution_date.year }}.parquet/*.parquet",
+        dst="noaa_fatalities_{{ execution_date.year }}/",
         mime_type="application/octet-stream",
     )
 
     remove_local_files_task = PythonOperator(
         task_id="remove_local_files",
-        python_callable=clean_up
+        python_callable=clean_up,
+        provide_context=True
+    )
+
+    trigger_load_to_bq = TriggerDagRunOperator(
+        task_id="trigger_load_to_bq",
+        trigger_dag_id="load_to_bq",
+        conf={"year": "{{ execution_date.year }}"}
     )
 
     download_data_task >> [process_storms_data_task, process_fatalities_data_task]
     process_storms_data_task >> upload_storms_to_gcs
     process_fatalities_data_task >> upload_fatalities_to_gcs
-    [upload_storms_to_gcs, upload_fatalities_to_gcs] >> remove_local_files_task
+    [upload_storms_to_gcs, upload_fatalities_to_gcs] >> remove_local_files_task >> trigger_load_to_bq

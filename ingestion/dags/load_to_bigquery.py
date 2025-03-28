@@ -1,32 +1,39 @@
 import os
-
-from airflow import DAG
-from airflow.models import Variable
-from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateExternalTableOperator, \
-    BigQueryInsertJobOperator, BigQueryCreateEmptyTableOperator
 from datetime import datetime
 
-year = Variable.get("year", 2024)
+from airflow import DAG
+from airflow.operators.empty import EmptyOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateExternalTableOperator, \
+    BigQueryInsertJobOperator, BigQueryCreateEmptyTableOperator
 
 gcs_bucket = os.getenv("GCS_BUCKET")
 bq_dataset = os.getenv("BQ_DATASET")
 project_id = os.getenv("GCP_PROJECT_ID")
 
-BQ_EXTERNAL_STORMS_TABLE = f"noaa_storms_{year}_external"
-BQ_EXTERNAL_FATALITIES_TABLE = f"noaa_fatalities_{year}_external"
 BQ_PARTITIONED_STORMS_TABLE = "noaa_storms_partitioned"
 BQ_PARTITIONED_FATALITIES_TABLE = "noaa_fatalities_partitioned"
 
-default_args = {"owner": "ingestion", "start_date": datetime(2024, 3, 21)}
+default_args = {"owner": "ingestion", "start_date": datetime(1951, 1, 1)}
 
-with DAG("load_to_bq", default_args=default_args, schedule_interval="@daily", catchup=False) as dag:
-
-    create_storms_external_table = BigQueryCreateExternalTableOperator(
+with DAG("load_to_bq", default_args=default_args, schedule_interval="@yearly", catchup=False) as dag:
+    start = EmptyOperator(
+        task_id="load_to_bq"
+    )
+    create_external_storms_table = BigQueryCreateExternalTableOperator(
         task_id="create_external_storms_table",
         table_resource={
-            "tableReference": {"projectId": project_id, "datasetId": bq_dataset, "tableId": BQ_EXTERNAL_STORMS_TABLE},
+            "tableReference": {
+                "projectId": project_id,
+                "datasetId": bq_dataset,
+                "tableId": "noaa_storms_{{ dag_run.conf['year'] }}_external"
+            },
             "externalDataConfiguration": {
-                "sourceUris": [f"gs://{gcs_bucket}/noaa_storms_{year}/*.parquet"],
+                "sourceUris": [
+                    "gs://{gcs_bucket}/noaa_storms_{year}/*.parquet".format(
+                        gcs_bucket=gcs_bucket,
+                        year="{{ dag_run.conf['year'] }}"
+                    )
+                ],
                 "sourceFormat": "PARQUET",
             }
         }
@@ -60,21 +67,30 @@ with DAG("load_to_bq", default_args=default_args, schedule_interval="@daily", ca
         task_id="copy_to_partitioned_storms_table",
         configuration={
             "query": {
-                "query": f"""
-                        INSERT INTO `{bq_dataset}.{BQ_PARTITIONED_STORMS_TABLE}`
-                        SELECT * FROM `{bq_dataset}.{BQ_EXTERNAL_STORMS_TABLE}`;
-                    """,
+                "query": """
+                        INSERT INTO `{bq_dataset}.{partitioned_storms_table}`
+                        SELECT * FROM `{bq_dataset}.{external_storms_table}`;
+                    """.format(
+                    bq_dataset=bq_dataset,
+                    partitioned_storms_table=BQ_PARTITIONED_STORMS_TABLE,
+                    external_storms_table="noaa_storms_{{ dag_run.conf['year'] }}_external"),
                 "useLegacySql": False,
             }
         }
     )
 
-    create_fatalities_external_table = BigQueryCreateExternalTableOperator(
+    create_external_fatalities_table = BigQueryCreateExternalTableOperator(
         task_id="create_external_fatalities_table",
         table_resource={
-            "tableReference": {"projectId": project_id, "datasetId": bq_dataset, "tableId": BQ_EXTERNAL_FATALITIES_TABLE},
+            "tableReference": {"projectId": project_id, "datasetId": bq_dataset,
+                               "tableId": "noaa_fatalities_{{ dag_run.conf['year'] }}_external"},
             "externalDataConfiguration": {
-                "sourceUris": [f"gs://{gcs_bucket}/noaa_fatalities_{year}/*.parquet"],
+                "sourceUris": [
+                    "gs://{gcs_bucket}/noaa_fatalities_{year}/*.parquet".format(
+                        gcs_bucket=gcs_bucket,
+                        year="{{ dag_run.conf['year'] }}"
+                    )
+                ],
                 "sourceFormat": "PARQUET",
             },
         },
@@ -101,17 +117,19 @@ with DAG("load_to_bq", default_args=default_args, schedule_interval="@daily", ca
         task_id="copy_to_partitioned_fatalities_table",
         configuration={
             "query": {
-                "query": f"""
-                            INSERT INTO `{bq_dataset}.{BQ_PARTITIONED_FATALITIES_TABLE}`
-                            SELECT * FROM `{bq_dataset}.{BQ_EXTERNAL_FATALITIES_TABLE}`;
-                        """,
+                "query": """
+                            INSERT INTO `{bq_dataset}.{partitioned_fatalities_table}`
+                            SELECT * FROM `{bq_dataset}.{external_fatalities_table}`;
+                        """.format(
+                    bq_dataset=bq_dataset,
+                    partitioned_fatalities_table=BQ_PARTITIONED_FATALITIES_TABLE,
+                    external_fatalities_table="noaa_fatalities_{{ dag_run.conf['year'] }}_external"
+                ),
                 "useLegacySql": False,
             }
         }
     )
 
-    create_storms_external_table >> create_partitioned_storms_table >> copy_to_partitioned_storms_table
-    create_fatalities_external_table >> create_partitioned_fatalities_table >> copy_to_partitioned_fatalities_table
-
-
-
+    start >> [create_external_storms_table, create_external_fatalities_table]
+    create_external_storms_table >> create_partitioned_storms_table >> copy_to_partitioned_storms_table
+    create_external_fatalities_table >> create_partitioned_fatalities_table >> copy_to_partitioned_fatalities_table
