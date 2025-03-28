@@ -10,7 +10,7 @@ with fact_events as (
 )
 
 select
-    event_type, sum(damage_crops + damage_property) as cost
+    event_start_year, event_type, sum(damage_crops + damage_property) as cost
 from fact_events
 group by 
-    event_type
+    event_start_year, event_type

@@ -14,6 +14,8 @@ select
     event_type,
     event_start_date,
     EXTRACT(MONTH FROM event_start_date) as event_start_month,
+    EXTRACT(YEAR FROM event_start_date) as event_start_year,
+    CONCAT(EXTRACT(YEAR FROM event_start_date), '-', EXTRACT(MONTH FROM event_end_date)) as event_start_year_month,
     event_end_date,
     injuries_direct,
     injuries_indirect,
