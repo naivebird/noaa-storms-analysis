@@ -79,9 +79,20 @@ docker-compose up --build -d
 ### Step 5: Trigger the ingestion pipeline
 To access the Airflow webserver, go to this address: http://0.0.0.0:8080/home
 
+Add connections for Spark and GCP by navigating to Admin -> Connections -> Add a new record
+
+spark_default connection
+
+![image](https://github.com/user-attachments/assets/c1308d71-51d7-4ae5-ba35-edb2cefa52e9)
+
+google_cloud_default connection:
+
+![image](https://github.com/user-attachments/assets/3109b053-1cd9-43b6-ac72-01df893d663f)
+
+
 To ingest data to BigQuery, these 2 DAGS must be executed: `ingest_noaa_data` and `load_to_bq`.
 
-You only need to manually trigger the first DAG, `ingest_noaa_data`, once it's complete, it will automatically trigger the second DAG to load data to BigQuery.
+You need to unpause both of them and manually trigger the first DAG, `ingest_noaa_data`, once it's complete, it will automatically trigger the second DAG to load data to BigQuery.
 
 ingest_noaa_data DAG:
 
