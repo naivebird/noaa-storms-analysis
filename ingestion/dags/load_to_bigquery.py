@@ -15,7 +15,14 @@ BQ_PARTITIONED_FATALITIES_TABLE = "noaa_fatalities_partitioned"
 
 default_args = {"owner": "ingestion", "start_date": datetime(1951, 1, 1)}
 
-with DAG("load_to_bq", default_args=default_args, schedule_interval=None, catchup=False) as dag:
+with DAG("load_to_bq",
+         default_args=default_args,
+         schedule_interval=None,
+         catchup=False,
+         params={
+             "year": datetime.utcnow().year - 1
+         }) as dag:
+
     start = EmptyOperator(
         task_id="load_to_bq"
     )
