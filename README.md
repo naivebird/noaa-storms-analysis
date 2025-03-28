@@ -130,3 +130,9 @@ Insights for the year 2024 from the dashboard:
 * June had the most deaths by natural events.
 * Hurricane caused the most economic damage with a total cost of nearly 7 billion dollars.
 * As always, while men account for 72% of deaths, women only make up 25.5%, with the remaining cases classified as unknown.
+
+### Step 8: Destroy the cloud resources
+Don't forget to remove the GCP resources you created earlier:
+```bash
+terraform destroy
+```
