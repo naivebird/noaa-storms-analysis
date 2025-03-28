@@ -81,7 +81,7 @@ To access the Airflow webserver, go to this address: http://0.0.0.0:8080/home
 
 Add connections for Spark and GCP by navigating to Admin -> Connections -> Add a new record
 
-spark_default_connection
+spark_default connection
 
 ![image](https://github.com/user-attachments/assets/c1308d71-51d7-4ae5-ba35-edb2cefa52e9)
 
