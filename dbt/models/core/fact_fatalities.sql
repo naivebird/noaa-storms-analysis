@@ -17,6 +17,7 @@ select
     fatality_date,
     EXTRACT(MONTH FROM fatality_date) as fatality_month,
     EXTRACT(YEAR FROM fatality_date) as fatality_year,
+    CONCAT(EXTRACT(YEAR FROM fatality_date), '-', EXTRACT(MONTH FROM fatality_date)) as fatality_year_month,
     CASE WHEN fatality_sex = 'M' THEN 'Male' 
          WHEN fatality_sex = 'F' THEN 'Female'
          ELSE 'Unknown' END as fatality_sex,

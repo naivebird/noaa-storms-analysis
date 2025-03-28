@@ -10,9 +10,9 @@ with fact_fatalites as (
 )
 
 select
-    fatality_month, count(1) as fatality_count
+    fatality_year, fatality_month, count(1) as fatality_count
 from fact_fatalites
 where fatality_month is not null
 group by 
-    fatality_month
-order by fatality_month
+    fatality_year, fatality_month
+order by fatality_year, fatality_month
