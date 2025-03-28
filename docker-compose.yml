@@ -75,6 +75,7 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    GOOGLE_APPLICATION_CREDENTIALS: /.google/credentials/credentials.json
     GCS_BUCKET: "de-zoomcamp-448805_noaa-data-lake"
     BQ_DATASET: "noaa_dataset"
     GCP_PROJECT_ID: "de-zoomcamp-448805"
