@@ -112,7 +112,7 @@ External tables are created for each year but the partitioned tables include dat
 
 The DAGs are scheduled to run yearly but you can backfill the data for the previous years by running this command:
 ```bash
- docker-compose exec airflow-scheduler airflow dags backfill -s 2019-01-01 -e 2023-01-01 ingest_noaa_data
+ docker-compose exec airflow-scheduler airflow dags backfill -s 2020-01-01 -e 2024-01-01 ingest_noaa_data
 ```
 
 ### Step 6: Build db models
