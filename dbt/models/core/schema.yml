@@ -1,0 +1,177 @@
+
+version: 2
+
+models:
+  - name: fact_fatalities_by_sex
+    description: "This is an aggregated table that counts number of fatality cases and groups them by sex"
+    columns:
+      - name: fatality_year
+        data_type: int64
+        description: ""
+
+      - name: fatality_sex
+        data_type: string
+        description: ""
+
+      - name: fatality_count
+        data_type: int64
+        description: ""
+
+  - name: fact_fatalities_by_month
+    description: "This is an aggregated table that counts the number of monthly fatality cases"
+    columns:
+      - name: fatality_year
+        data_type: int64
+        description: ""
+
+      - name: fatality_month
+        data_type: int64
+        description: ""
+
+      - name: fatality_count
+        data_type: int64
+        description: ""
+
+  - name: fact_events
+    description: "This table gets data from the stg_noaa_storms table, and adds some new columns for upstream analytical queries such as event_start_date, event_start_month, event_start_year_month, and event_start_year."
+    columns:
+      - name: event_id
+        data_type: string
+        description: ""
+
+      - name: state
+        data_type: string
+        description: ""
+
+      - name: event_type
+        data_type: string
+        description: ""
+
+      - name: event_start_date
+        data_type: timestamp
+        description: ""
+
+      - name: event_start_month
+        data_type: int64
+        description: ""
+
+      - name: event_start_year
+        data_type: int64
+        description: ""
+
+      - name: event_start_year_month
+        data_type: string
+        description: ""
+
+      - name: event_end_date
+        data_type: timestamp
+        description: ""
+
+      - name: injuries_direct
+        data_type: int64
+        description: ""
+
+      - name: injuries_indirect
+        data_type: int64
+        description: ""
+
+      - name: deaths_direct
+        data_type: int64
+        description: ""
+
+      - name: deaths_indirect
+        data_type: int64
+        description: ""
+
+      - name: damage_property
+        data_type: int64
+        description: ""
+
+      - name: damage_crops
+        data_type: int64
+        description: ""
+
+      - name: source
+        data_type: string
+        description: ""
+
+      - name: magnitude
+        data_type: float64
+        description: ""
+
+      - name: magnitude_type
+        data_type: string
+        description: ""
+
+  - name: fact_fatality_type_by_event_type
+    description: "This is an aggregated table that counts the number of fatalities and groups them by type and event type."
+    columns:
+      - name: event_start_year
+        data_type: int64
+        description: ""
+
+      - name: event_type
+        data_type: string
+        description: ""
+
+      - name: fatality_type
+        data_type: string
+        description: ""
+
+      - name: fatality_count
+        data_type: int64
+        description: ""
+
+  - name: fact_fatalities
+    description: "This fact table gets data from the stg_noaa_fatalities and adds some new columns that will be used by upstream queries: fatality_month, fatality_year, fatality_year_month"
+    columns:
+      - name: fatality_id
+        data_type: string
+        description: ""
+
+      - name: event_id
+        data_type: string
+        description: ""
+
+      - name: fatality_type
+        data_type: string
+        description: ""
+
+      - name: fatality_date
+        data_type: timestamp
+        description: ""
+
+      - name: fatality_month
+        data_type: int64
+        description: ""
+
+      - name: fatality_year
+        data_type: int64
+        description: ""
+
+      - name: fatality_year_month
+        data_type: string
+        description: ""
+
+      - name: fatality_sex
+        data_type: string
+        description: ""
+
+      - name: fatality_location
+        data_type: string
+        description: ""
+
+  - name: fact_costliest_events
+    description: "This is an aggregated table that calculates the total economic damage per storm event."
+    columns:
+      - name: event_start_year
+        data_type: int64
+        description: ""
+
+      - name: event_type
+        data_type: string
+        description: ""
+
+      - name: cost
+        data_type: int64
+        description: ""
