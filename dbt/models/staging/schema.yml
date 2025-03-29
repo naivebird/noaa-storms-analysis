@@ -8,3 +8,125 @@ sources:
     tables:
       - name: noaa_storms_partitioned
       - name: noaa_fatalities_partitioned
+
+    
+models:
+  - name: stg_noaa_fatalities
+    description: "This table stores fatality data with one record corresponding to a fatality case."
+    columns:
+      - name: fatality_id
+        data_type: string
+        description: "ID assigned by NWS to denote the individual fatality that occurred."
+        tests:
+          - unique:
+              severity: warn
+          - not_null:
+              severity: warn
+
+      - name: event_id
+        data_type: string
+        description: "ID assigned by NWS for each individual storm event contained within a storm episode"
+        tests:
+          - relationships:
+              to: ref('stg_noaa_storms')
+              field: event_id
+              severity: warn
+
+      - name: fatality_type
+        data_type: string
+        description: "Ex: D , I (D = Direct Fatality; I = Indirect Fatality); assignment of this is determined by NWS software."
+        tests:
+          - accepted_values:
+              values: ['I', 'D']
+              severity: warn
+
+      - name: fatality_date
+        data_type: timestamp
+        description: ""
+        tests:
+          - not_null:
+              severity: warn
+
+      - name: fatality_age
+        data_type: int64
+        description: ""
+
+      - name: fatality_sex
+        data_type: string
+        description: ""
+        tests:
+          - accepted_values:
+              values: ['M', 'F']
+              severity: warn
+
+      - name: fatality_location
+        data_type: string
+        description: ""
+
+  - name: stg_noaa_storms
+    description: "This table stores storm events, each record is an individual event."
+    columns:
+      - name: event_id
+        data_type: string
+        description: "ID assigned by NWS for each individual storm event contained within a storm episode"
+        tests:
+          - unique:
+              severity: warn
+          - not_null:
+              severity: warn
+
+      - name: state
+        data_type: string
+        description: "The state name where the event occurred"
+
+      - name: event_type
+        data_type: string
+        description: "Ex: Hail, Thunderstorm Wind, Snow, Ice (spelled out; not abbreviated)"
+
+      - name: event_start_date
+        data_type: timestamp
+        description: ""
+        tests:
+          - not_null:
+              severity: warn
+
+      - name: event_end_date
+        data_type: timestamp
+        description: ""
+
+      - name: injuries_direct
+        data_type: int64
+        description: "The number of injuries directly caused by the weather event."
+
+      - name: injuries_indirect
+        data_type: int64
+        description: "The number of injuries indirectly caused by the weather event."
+
+      - name: deaths_direct
+        data_type: int64
+        description: "The number of deaths directly caused by the weather event."
+
+      - name: deaths_indirect
+        data_type: int64
+        description: "The number of deaths indirectly caused by the weather event. "
+
+      - name: damage_property
+        data_type: int64
+        description: "The estimated amount of damage to property incurred by the weather event (e.g. 10.00K = $10,000; 10.00M = $10,000,000)"
+
+      - name: damage_crops
+        data_type: int64
+        description: "The estimated amount of damage to crops incurred by the weather event (e.g. 10.00K = $10,000; 10.00M = $10,000,000)."
+
+      - name: source
+        data_type: string
+        description: "The source reporting the weather event (can be any entry; isn’t restricted in what’s allowed)."
+
+      - name: magnitude
+        data_type: float64
+        description: ""
+
+      - name: magnitude_type
+        data_type: string
+        description: "Ex: EG, MS, MG, ES. EG = Wind Estimated Gust; ES = Estimated Sustained Wind; MS = Measured Sustained Wind; MG = Measured Wind Gust (no magnitude is included for instances of hail)."
+
