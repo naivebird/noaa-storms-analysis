@@ -118,11 +118,16 @@ The DAGs are scheduled to run yearly but you can backfill the data for the previ
 ### Step 6: Build db models
 Create a new project on your dbtCloud, and connect it with the `noaa-storms-analysis/dbt` subdirectory in this project. Connect the dbt project with your BigQuery db, and change the location setting to `us-west1`.
 
-Update the database name in `staging/schema.yml` with your project ID and build the upstream and downstream models of `fact_events.sql` and `fact_fatalities.sql`
+Update the database name in `staging/schema.yml` with your project ID and build the models by running:
 
-Linages:
-![image](https://github.com/user-attachments/assets/b4f30379-c1fb-46bd-930b-5d22ca25d8b8)
-![image](https://github.com/user-attachments/assets/7b6d8881-0214-4ec2-adb0-fac8f92c3669)
+```bash
+dbt build
+```
+
+Linage:
+
+![image](https://github.com/user-attachments/assets/30ebb7e1-b0b0-456b-a4bf-67d4a13b0115)
+
 
 The built models can be found in the `dbt_noaa_storms_data` dataset in your BigQuery database.
 
