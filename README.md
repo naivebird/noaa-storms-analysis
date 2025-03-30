@@ -26,7 +26,7 @@ Data in CSV format is initially downloaded from the NOAA website and stored in t
 ### Prerequisites 
 * Docker
 * docker-compose
-* terraform
+* Terraform
 
 ### Step 1: Clone the repository
 ```bash
