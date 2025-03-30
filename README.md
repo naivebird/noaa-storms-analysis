@@ -115,7 +115,7 @@ The DAGs are scheduled to run yearly but you can backfill the data for the previ
  docker-compose exec airflow-scheduler airflow dags backfill -s 2020-01-01 -e 2024-01-01 ingest_noaa_data
 ```
 
-### Step 6: Build db models
+### Step 6: Build data models
 Create a new project on your dbtCloud, and connect it with the `noaa-storms-analysis/dbt` subdirectory in this project. Connect the dbt project with your BigQuery db, and change the location setting to `us-west1`.
 
 Update the database name in `staging/schema.yml` with your project ID and build the models by running:
